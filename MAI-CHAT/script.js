@@ -1,17 +1,23 @@
-const sidebar = document.getElementById("sidebar");
-const menuBtn = document.getElementById("menuBtn");
-const overlay = document.getElementById("overlay");
-
 const chatBox = document.getElementById("chatBox");
 const userInput = document.getElementById("userInput");
 const sendBtn = document.getElementById("sendBtn");
 const micBtn = document.getElementById("micBtn");
-const historyBox = document.getElementById("history");
+
+const menuBtn = document.getElementById("menuBtn");
+const sidebar = document.getElementById("sidebar");
+const overlay = document.getElementById("overlay");
 const newChatBtn = document.getElementById("newChatBtn");
+const historyBox = document.getElementById("history");
 
+/* ======================
+   MEMORY (LOCAL STORAGE)
+====================== */
 let chats = JSON.parse(localStorage.getItem("maichatHistory")) || [];
+renderHistory();
 
-/* SIDEBAR */
+/* ======================
+   SIDEBAR CONTROLS
+====================== */
 menuBtn.onclick = () => {
   sidebar.classList.add("active");
   overlay.style.display = "block";
@@ -24,41 +30,84 @@ function closeSidebar(){
   overlay.style.display = "none";
 }
 
-/* NEW CHAT */
+/* ======================
+   NEW CHAT
+====================== */
 newChatBtn.onclick = () => {
   chatBox.innerHTML = `<div class="message bot">New chat started 🚀</div>`;
   closeSidebar();
 };
 
-/* SEND */
+/* ======================
+   SEND MESSAGE
+====================== */
 sendBtn.onclick = sendMessage;
 
 async function sendMessage(){
   const text = userInput.value.trim();
   if(!text) return;
 
-  addMessage(text,"user");
-  userInput.value="";
+  addMessage(text, "user");
+  userInput.value = "";
 
-  const botDiv = document.createElement("div");
-  botDiv.className="message bot";
-  chatBox.appendChild(botDiv);
-
+  const botBubble = createBotMessage();
   const typing = showTyping();
 
-  const reply = await getAI(text);
+  try {
+    const reply = await getAIResponse(text);
 
-  typing.remove();
+    typing.remove();
 
-  streamText(reply, botDiv);
-  speak(reply);
+    streamText(reply, botBubble);
+    speak(reply);
 
-  chats.push(text);
-  localStorage.setItem("maichatHistory",JSON.stringify(chats));
-  renderHistory();
+    chats.push(text);
+    localStorage.setItem("maichatHistory", JSON.stringify(chats));
+    renderHistory();
+
+  } catch (error) {
+    typing.remove();
+    botBubble.textContent = "⚠️ MAICHAT error. Check backend connection.";
+    console.error(error);
+  }
 }
 
-/* STREAMING TEXT (GPT STYLE) */
+/* ======================
+   ADD MESSAGE
+====================== */
+function addMessage(text, type){
+  const div = document.createElement("div");
+  div.className = `message ${type === "user" ? "user-message" : "ai-message"}`;
+  div.textContent = text;
+  chatBox.appendChild(div);
+  scrollToBottom();
+}
+
+/* ======================
+   BOT MESSAGE HOLDER
+====================== */
+function createBotMessage(){
+  const div = document.createElement("div");
+  div.className = "message ai-message";
+  chatBox.appendChild(div);
+  return div;
+}
+
+/* ======================
+   TYPING INDICATOR
+====================== */
+function showTyping(){
+  const div = document.createElement("div");
+  div.className = "message ai-message";
+  div.textContent = "MAICHAT is thinking...";
+  chatBox.appendChild(div);
+  scrollToBottom();
+  return div;
+}
+
+/* ======================
+   STREAMING EFFECT
+====================== */
 function streamText(text, element){
   let i = 0;
   element.textContent = "";
@@ -67,67 +116,69 @@ function streamText(text, element){
     if(i < text.length){
       element.textContent += text[i];
       i++;
-      chatBox.scrollTop = chatBox.scrollHeight;
-      setTimeout(type, 12);
+      scrollToBottom();
+      setTimeout(type, 10); // speed
     }
   }
+
   type();
 }
 
-/* MESSAGE */
-function addMessage(text,type){
-  const div=document.createElement("div");
-  div.className=`message ${type}`;
-  div.textContent=text;
-  chatBox.appendChild(div);
+/* ======================
+   SCROLL CONTROL
+====================== */
+function scrollToBottom(){
+  chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-/* TYPING */
-function showTyping(){
-  const div=document.createElement("div");
-  div.className="message bot";
-  div.textContent="MAICHAT is thinking...";
-  chatBox.appendChild(div);
-  return div;
-}
-
-/* AI BACKEND */
-async function getAI(message){
-  const res = await fetch("/.netlify/functions/chat",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({message})
+/* ======================
+   CALL BACKEND (RENDER)
+====================== */
+async function getAIResponse(message){
+  const res = await fetch("https://YOUR-RENDER-URL.onrender.com/api/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ message })
   });
 
   const data = await res.json();
   return data.reply;
 }
 
-/* MEMORY */
+/* ======================
+   HISTORY SYSTEM
+====================== */
 function renderHistory(){
-  historyBox.innerHTML = chats.map(c=>
+  historyBox.innerHTML = chats.map(c =>
     `<div class="history-item">${c}</div>`
   ).join("");
 }
-renderHistory();
 
-/* SPEECH OUTPUT */
+/* ======================
+   SPEECH OUTPUT (AI VOICE)
+====================== */
 function speak(text){
-  const s=new SpeechSynthesisUtterance(text);
-  s.lang="en-US";
-  window.speechSynthesis.speak(s);
+  const speech = new SpeechSynthesisUtterance(text);
+  speech.lang = "en-US";
+  speech.rate = 1;
+  window.speechSynthesis.speak(speech);
 }
 
-/* VOICE INPUT */
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+/* ======================
+   VOICE INPUT (MIC)
+====================== */
+const SpeechRecognition =
+  window.SpeechRecognition || window.webkitSpeechRecognition;
 
 if(SpeechRecognition){
-  const rec=new SpeechRecognition();
-  rec.lang="en-US";
+  const rec = new SpeechRecognition();
+  rec.lang = "en-US";
 
-  micBtn.onclick=()=>rec.start();
+  micBtn.onclick = () => rec.start();
 
-  rec.onresult=(e)=>{
-    userInput.value=e.results[0][0].transcript;
+  rec.onresult = (event) => {
+    userInput.value = event.results[0][0].transcript;
   };
 }
