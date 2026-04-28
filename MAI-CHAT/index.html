@@ -1,31 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MAICHAT AI</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAICHAT AI</title>
+<link rel="stylesheet" href="style.css">
 </head>
+
 <body>
+
+<div class="topbar">
+  <button id="menuBtn">☰</button>
+  <div class="title">MAICHAT</div>
+</div>
+
+<div id="overlay"></div>
 
 <div class="app">
 
-  <aside class="sidebar">
-    <div class="logo">MAICHAT</div>
+  <aside class="sidebar" id="sidebar">
     <button id="newChatBtn">+ New Chat</button>
     <div id="history" class="history"></div>
   </aside>
 
   <main class="chat-area">
+
     <div id="chatBox" class="chat-box">
       <div class="message bot">Hello 👋 I’m MAICHAT, your AI assistant.</div>
     </div>
 
-    <div class="input-area">
-      <textarea id="userInput" placeholder="Message MAICHAT..."></textarea>
-      <button id="micBtn">🎤</button>
-      <button id="sendBtn">Send</button>
+    <div class="input-wrapper">
+      <div class="input-area">
+        <textarea id="userInput" placeholder="Message MAICHAT..."></textarea>
+        <button id="micBtn">🎤</button>
+        <button id="sendBtn">➤</button>
+      </div>
     </div>
+
   </main>
 
 </div>
