@@ -10,7 +10,7 @@ const newChatBtn = document.getElementById("newChatBtn");
 const historyBox = document.getElementById("history");
 
 /* ======================
-   MEMORY (LOCAL STORAGE)
+   MEMORY SYSTEM
 ====================== */
 let chats = JSON.parse(localStorage.getItem("maichatHistory")) || [];
 renderHistory();
@@ -34,7 +34,7 @@ function closeSidebar(){
    NEW CHAT
 ====================== */
 newChatBtn.onclick = () => {
-  chatBox.innerHTML = `<div class="message bot">New chat started 🚀</div>`;
+  chatBox.innerHTML = `<div class="message ai-message">New chat started 🚀</div>`;
   closeSidebar();
 };
 
@@ -47,14 +47,14 @@ async function sendMessage(){
   const text = userInput.value.trim();
   if(!text) return;
 
-  addMessage(text, "user");
+  addMessage(text,"user-message");
   userInput.value = "";
 
   const botBubble = createBotMessage();
   const typing = showTyping();
 
   try {
-    const reply = await getAIResponse(text);
+    const reply = await getAI(text);
 
     typing.remove();
 
@@ -67,7 +67,7 @@ async function sendMessage(){
 
   } catch (error) {
     typing.remove();
-    botBubble.textContent = "⚠️ MAICHAT error. Check backend connection.";
+    botBubble.textContent = "⚠️ MAICHAT backend error.";
     console.error(error);
   }
 }
@@ -75,12 +75,12 @@ async function sendMessage(){
 /* ======================
    ADD MESSAGE
 ====================== */
-function addMessage(text, type){
+function addMessage(text,type){
   const div = document.createElement("div");
-  div.className = `message ${type === "user" ? "user-message" : "ai-message"}`;
+  div.className = `message ${type}`;
   div.textContent = text;
   chatBox.appendChild(div);
-  scrollToBottom();
+  scrollBottom();
 }
 
 /* ======================
@@ -94,19 +94,19 @@ function createBotMessage(){
 }
 
 /* ======================
-   TYPING INDICATOR
+   TYPING EFFECT
 ====================== */
 function showTyping(){
   const div = document.createElement("div");
   div.className = "message ai-message";
   div.textContent = "MAICHAT is thinking...";
   chatBox.appendChild(div);
-  scrollToBottom();
+  scrollBottom();
   return div;
 }
 
 /* ======================
-   STREAMING EFFECT
+   STREAMING TEXT EFFECT
 ====================== */
 function streamText(text, element){
   let i = 0;
@@ -116,8 +116,8 @@ function streamText(text, element){
     if(i < text.length){
       element.textContent += text[i];
       i++;
-      scrollToBottom();
-      setTimeout(type, 10); // speed
+      scrollBottom();
+      setTimeout(type, 10);
     }
   }
 
@@ -127,20 +127,24 @@ function streamText(text, element){
 /* ======================
    SCROLL CONTROL
 ====================== */
-function scrollToBottom(){
+function scrollBottom(){
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 /* ======================
-   CALL BACKEND (RENDER)
+   SAAS AI BACKEND (RENDER + TOKEN AUTH)
 ====================== */
-async function getAIResponse(message){
-  const res = await fetch("https://YOUR-RENDER-URL.onrender.com/api/chat", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
+async function getAI(message){
+
+  const token = localStorage.getItem("maichat_token");
+
+  const res = await fetch("https://YOUR-RENDER-URL.onrender.com/api/chat",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "Authorization":`Bearer ${token}`
     },
-    body: JSON.stringify({ message })
+    body:JSON.stringify({message})
   });
 
   const data = await res.json();
@@ -157,7 +161,7 @@ function renderHistory(){
 }
 
 /* ======================
-   SPEECH OUTPUT (AI VOICE)
+   TEXT TO SPEECH
 ====================== */
 function speak(text){
   const speech = new SpeechSynthesisUtterance(text);
@@ -178,7 +182,7 @@ if(SpeechRecognition){
 
   micBtn.onclick = () => rec.start();
 
-  rec.onresult = (event) => {
-    userInput.value = event.results[0][0].transcript;
+  rec.onresult = (e) => {
+    userInput.value = e.results[0][0].transcript;
   };
 }
