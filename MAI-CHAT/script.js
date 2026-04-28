@@ -10,13 +10,13 @@ const newChatBtn = document.getElementById("newChatBtn");
 const historyBox = document.getElementById("history");
 
 /* ======================
-   MEMORY SYSTEM
+   MEMORY
 ====================== */
 let chats = JSON.parse(localStorage.getItem("maichatHistory")) || [];
 renderHistory();
 
 /* ======================
-   SIDEBAR CONTROLS
+   SIDEBAR
 ====================== */
 menuBtn.onclick = () => {
   sidebar.classList.add("active");
@@ -80,11 +80,11 @@ function addMessage(text,type){
   div.className = `message ${type}`;
   div.textContent = text;
   chatBox.appendChild(div);
-  scrollBottom();
+  chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 /* ======================
-   BOT MESSAGE HOLDER
+   BOT MESSAGE
 ====================== */
 function createBotMessage(){
   const div = document.createElement("div");
@@ -94,19 +94,19 @@ function createBotMessage(){
 }
 
 /* ======================
-   TYPING EFFECT
+   TYPING
 ====================== */
 function showTyping(){
   const div = document.createElement("div");
   div.className = "message ai-message";
   div.textContent = "MAICHAT is thinking...";
   chatBox.appendChild(div);
-  scrollBottom();
+  chatBox.scrollTop = chatBox.scrollHeight;
   return div;
 }
 
 /* ======================
-   STREAMING TEXT EFFECT
+   STREAMING EFFECT
 ====================== */
 function streamText(text, element){
   let i = 0;
@@ -116,7 +116,7 @@ function streamText(text, element){
     if(i < text.length){
       element.textContent += text[i];
       i++;
-      scrollBottom();
+      chatBox.scrollTop = chatBox.scrollHeight;
       setTimeout(type, 10);
     }
   }
@@ -125,26 +125,19 @@ function streamText(text, element){
 }
 
 /* ======================
-   SCROLL CONTROL
-====================== */
-function scrollBottom(){
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-/* ======================
-   SAAS AI BACKEND (RENDER + TOKEN AUTH)
+   🚀 YOUR RENDER BACKEND (UPDATED)
 ====================== */
 async function getAI(message){
 
   const token = localStorage.getItem("maichat_token");
 
-  const res = await fetch("https://YOUR-RENDER-URL.onrender.com/api/chat",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "Authorization":`Bearer ${token}`
+  const res = await fetch("https://mai-chat-backend.onrender.com/api/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token || ""}`
     },
-    body:JSON.stringify({message})
+    body: JSON.stringify({ message })
   });
 
   const data = await res.json();
@@ -152,7 +145,7 @@ async function getAI(message){
 }
 
 /* ======================
-   HISTORY SYSTEM
+   HISTORY
 ====================== */
 function renderHistory(){
   historyBox.innerHTML = chats.map(c =>
@@ -161,7 +154,7 @@ function renderHistory(){
 }
 
 /* ======================
-   TEXT TO SPEECH
+   SPEECH OUTPUT
 ====================== */
 function speak(text){
   const speech = new SpeechSynthesisUtterance(text);
@@ -171,7 +164,7 @@ function speak(text){
 }
 
 /* ======================
-   VOICE INPUT (MIC)
+   VOICE INPUT
 ====================== */
 const SpeechRecognition =
   window.SpeechRecognition || window.webkitSpeechRecognition;
