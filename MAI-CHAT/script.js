@@ -12,22 +12,30 @@ renderHistory();
 sendBtn.addEventListener("click", sendMessage);
 newChatBtn.addEventListener("click", newChat);
 
-function sendMessage() {
+async function sendMessage() {
   const text = userInput.value.trim();
   if (!text) return;
 
   addMessage(text, "user");
   userInput.value = "";
 
-  typingEffect(() => {
-    const reply = generateReply(text);
+  const typing = showTyping();
+
+  try {
+    const reply = await getAIResponse(text);
+
+    typing.remove();
     addMessage(reply, "bot");
     speak(reply);
 
     chats.push(text);
     localStorage.setItem("maichatHistory", JSON.stringify(chats));
     renderHistory();
-  });
+
+  } catch (err) {
+    typing.remove();
+    addMessage("AI error. Check backend connection.", "bot");
+  }
 }
 
 function addMessage(text, sender) {
@@ -38,70 +46,55 @@ function addMessage(text, sender) {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-function typingEffect(callback) {
-  const typing = document.createElement("div");
-  typing.className = "message bot";
-  typing.textContent = "MAICHAT is typing...";
-  chatBox.appendChild(typing);
-  chatBox.scrollTop = chatBox.scrollHeight;
-
-  setTimeout(() => {
-    typing.remove();
-    callback();
-  }, 1200);
+function showTyping() {
+  const div = document.createElement("div");
+  div.className = "message bot";
+  div.textContent = "MAICHAT is typing...";
+  chatBox.appendChild(div);
+  return div;
 }
 
-function generateReply(text) {
-  return "You said: " + text;
+/* REAL AI BACKEND CALL */
+async function getAIResponse(message) {
+  const res = await fetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message })
+  });
+
+  const data = await res.json();
+  return data.reply;
 }
 
+/* MEMORY */
 function renderHistory() {
-  historyBox.innerHTML = chats.map(chat =>
-    `<div class="history-item">${chat}</div>`
+  historyBox.innerHTML = chats.map(c =>
+    `<div class="history-item">${c}</div>`
   ).join("");
 }
 
 function newChat() {
-  chatBox.innerHTML = `
-    <div class="message bot">Hello, I’m MAICHAT. How can I help?</div>
-  `;
+  chatBox.innerHTML = `<div class="message bot">New chat started.</div>`;
 }
 
+/* TEXT TO SPEECH */
 function speak(text) {
   const speech = new SpeechSynthesisUtterance(text);
   speech.lang = "en-US";
-  speech.rate = 1;
   window.speechSynthesis.speak(speech);
 }
 
-/* VOICE TO TEXT */
+/* VOICE INPUT */
 const SpeechRecognition =
   window.SpeechRecognition || window.webkitSpeechRecognition;
 
 if (SpeechRecognition) {
   const recognition = new SpeechRecognition();
-
-  recognition.continuous = false;
   recognition.lang = "en-US";
-  recognition.interimResults = false;
 
-  micBtn.addEventListener("click", () => {
-    recognition.start();
-    micBtn.textContent = "🎙️";
-  });
+  micBtn.addEventListener("click", () => recognition.start());
 
-  recognition.onresult = (event) => {
-    userInput.value = event.results[0][0].transcript;
-    micBtn.textContent = "🎤";
+  recognition.onresult = (e) => {
+    userInput.value = e.results[0][0].transcript;
   };
-
-  recognition.onerror = () => {
-    micBtn.textContent = "🎤";
-  };
-
-  recognition.onend = () => {
-    micBtn.textContent = "🎤";
-  };
-} else {
-  micBtn.style.display = "none";
 }
