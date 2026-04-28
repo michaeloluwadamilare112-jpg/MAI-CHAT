@@ -25,7 +25,7 @@ menuBtn.onclick = () => {
 
 overlay.onclick = closeSidebar;
 
-function closeSidebar(){
+function closeSidebar() {
   sidebar.classList.remove("active");
   overlay.style.display = "none";
 }
@@ -43,14 +43,13 @@ newChatBtn.onclick = () => {
 ====================== */
 sendBtn.onclick = sendMessage;
 
-async function sendMessage(){
+async function sendMessage() {
   const text = userInput.value.trim();
-  if(!text) return;
+  if (!text) return;
 
-  addMessage(text,"user-message");
+  addMessage(text, "user-message");
   userInput.value = "";
 
-  const botBubble = createBotMessage();
   const typing = showTyping();
 
   try {
@@ -58,7 +57,9 @@ async function sendMessage(){
 
     typing.remove();
 
+    const botBubble = createBotMessage();
     streamText(reply, botBubble);
+
     speak(reply);
 
     chats.push(text);
@@ -67,7 +68,10 @@ async function sendMessage(){
 
   } catch (error) {
     typing.remove();
+
+    const botBubble = createBotMessage();
     botBubble.textContent = "⚠️ MAICHAT backend error.";
+
     console.error(error);
   }
 }
@@ -75,18 +79,18 @@ async function sendMessage(){
 /* ======================
    ADD MESSAGE
 ====================== */
-function addMessage(text,type){
+function addMessage(text, type) {
   const div = document.createElement("div");
   div.className = `message ${type}`;
   div.textContent = text;
   chatBox.appendChild(div);
-  chatBox.scrollTop = chatBox.scrollHeight;
+  scrollBottom();
 }
 
 /* ======================
-   BOT MESSAGE
+   BOT MESSAGE HOLDER
 ====================== */
-function createBotMessage(){
+function createBotMessage() {
   const div = document.createElement("div");
   div.className = "message ai-message";
   chatBox.appendChild(div);
@@ -94,29 +98,29 @@ function createBotMessage(){
 }
 
 /* ======================
-   TYPING
+   TYPING INDICATOR
 ====================== */
-function showTyping(){
+function showTyping() {
   const div = document.createElement("div");
   div.className = "message ai-message";
   div.textContent = "MAICHAT is thinking...";
   chatBox.appendChild(div);
-  chatBox.scrollTop = chatBox.scrollHeight;
+  scrollBottom();
   return div;
 }
 
 /* ======================
    STREAMING EFFECT
 ====================== */
-function streamText(text, element){
+function streamText(text, element) {
   let i = 0;
   element.textContent = "";
 
-  function type(){
-    if(i < text.length){
+  function type() {
+    if (i < text.length) {
       element.textContent += text[i];
       i++;
-      chatBox.scrollTop = chatBox.scrollHeight;
+      scrollBottom();
       setTimeout(type, 10);
     }
   }
@@ -125,13 +129,20 @@ function streamText(text, element){
 }
 
 /* ======================
-   🚀 YOUR RENDER BACKEND (UPDATED)
+   SCROLL
 ====================== */
-async function getAI(message){
+function scrollBottom() {
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+/* ======================
+   AI FETCH (UPDATED URL)
+====================== */
+async function getAI(message) {
 
   const token = localStorage.getItem("maichat_token");
 
-  const res = await fetch("https://mai-chat-backend.onrender.com/api/chat", {
+  const res = await fetch("https://mai-chat-backend-1.onrender.com/api/chat", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -147,16 +158,16 @@ async function getAI(message){
 /* ======================
    HISTORY
 ====================== */
-function renderHistory(){
+function renderHistory() {
   historyBox.innerHTML = chats.map(c =>
     `<div class="history-item">${c}</div>`
   ).join("");
 }
 
 /* ======================
-   SPEECH OUTPUT
+   TEXT TO SPEECH
 ====================== */
-function speak(text){
+function speak(text) {
   const speech = new SpeechSynthesisUtterance(text);
   speech.lang = "en-US";
   speech.rate = 1;
@@ -169,7 +180,7 @@ function speak(text){
 const SpeechRecognition =
   window.SpeechRecognition || window.webkitSpeechRecognition;
 
-if(SpeechRecognition){
+if (SpeechRecognition) {
   const rec = new SpeechRecognition();
   rec.lang = "en-US";
 
